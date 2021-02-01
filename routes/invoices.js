@@ -58,14 +58,35 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
 	try {
 		const { id } = req.params;
-		const { amt } = req.body;
-		const results = await db.query(
-			`UPDATE invoices SET amt=$1 WHERE id=$2 RETURNING id, comp_code, amt, paid, add_date, paid_date`,
-			[ amt, id ]
-		);
-		if (results.rows.length === 0) {
+		const { amt, paid } = req.body;
+		let paidDate = null;
+
+		// get current payment state of id
+		const currentState = await db.query(`SELECT paid, paid_date FROM invoices WHERE id=$1`, [
+			id
+		]);
+
+		// throw error if above query does not return a match
+		if (currentState.rows.length === 0) {
 			throw new ExpressError(`Cannot find invoice: ${id}`, 404);
 		}
+		const currDate = currentState.rows[0].paid_date;
+		if (!currDate && paid) {
+			// this is where the paid_date is null and the passed 'paid' data is true. This means its being marked as paid at this moment so update the paidDate
+			paidDate = new Date();
+		} else if (!paid) {
+			// "paid" is false in request body let's make sure paidDate is null here
+			paidDate = null;
+		} else {
+			// keep current paid_date since its not being updated
+			paidDate = currDate;
+		}
+
+		const results = await db.query(
+			`UPDATE invoices SET amt=$1, paid=$2, paid_date=$3 WHERE id=$4 RETURNING id, comp_code, amt, paid, add_date, paid_date`,
+			[ amt, paid, paidDate, id ]
+		);
+
 		return res.json({ invoice: results.rows[0] });
 	} catch (error) {
 		return next(error);

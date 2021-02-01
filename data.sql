@@ -1,7 +1,12 @@
-\cbiztime
+DROP DATABASE IF EXISTS biztime;
+CREATE DATABASE biztime;
 
-DROP TABLE IF EXISTS invoices;
-DROP TABLE IF EXISTS companies;
+\c biztime;
+
+DROP TABLE IF EXISTS invoices
+CASCADE;
+DROP TABLE IF EXISTS companies
+CASCADE;
 
 CREATE TABLE companies
 (
@@ -22,6 +27,21 @@ CREATE TABLE invoices
   ::double precision))
 );
 
+  CREATE TABLE industries
+  (
+    code text PRIMARY KEY,
+    industry text NOT NULL UNIQUE
+  );
+
+  CREATE TABLE companies_industries
+  (
+    company_code TEXT NOT NULL REFERENCES companies,
+    industry_code TEXT NOT NULL REFERENCES industries,
+    PRIMARY KEY(company_code, industry_code)
+  );
+
+
+
   INSERT INTO companies
   VALUES
     ('apple', 'Apple Computer', 'Maker of OSX.'),
@@ -34,3 +54,9 @@ CREATE TABLE invoices
     ('apple', 200, false, null),
     ('apple', 300, true, '2018-01-01'),
     ('ibm', 400, false, null);
+
+  INSERT INTO industries
+  VALUES
+    ('tech', 'technology'),
+    ('acct', 'accounting'),
+    ('cslt', 'consulting');
