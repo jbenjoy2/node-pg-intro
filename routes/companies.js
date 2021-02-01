@@ -2,6 +2,7 @@ const express = require('express');
 const router = new express.Router();
 const db = require('../db');
 const ExpressError = require('../expressError');
+const slugify = require('slugify');
 
 router.get('/', async (req, res, next) => {
 	try {
@@ -25,8 +26,10 @@ router.get('/:code', async (req, res, next) => {
 		}
 		const companyData = companyResults.rows[0];
 		const invoiceData = invoiceResults.rows;
+		if (invoiceData.length > 0) {
+			companyData.invoices = invoiceData;
+		}
 
-		companyData.invoices = invoiceData;
 		return res.json({ company: companyData });
 	} catch (error) {
 		return next(error);
@@ -48,11 +51,10 @@ router.post('/', async (req, res, next) => {
 
 router.put('/:code', async (req, res, next) => {
 	try {
-		const { code } = req.params;
 		const { name, description } = req.body;
 		const results = await db.query(
 			`UPDATE companies SET name=$1, description=$2 WHERE code=$3 RETURNING code, name, description`,
-			[ name, description, code ]
+			[ name, description, slugify(name) ]
 		);
 		if (results.rows.length === 0) {
 			throw new ExpressError(`Can't find company with code of ${code}`, 404);

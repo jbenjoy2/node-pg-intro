@@ -36,7 +36,7 @@ router.get('/:id', async (req, res, next) => {
 				description : resultsInfo.description
 			}
 		};
-		return res.json({ invoice: invoiceInfo });
+		return res.send({ invoice: invoiceInfo });
 	} catch (error) {
 		return next(error);
 	}
@@ -49,7 +49,7 @@ router.post('/', async (req, res, next) => {
 			`INSERT INTO invoices (comp_code, amt) VALUES ($1, $2) RETURNING id, comp_code, amt, paid, add_date, paid_date`,
 			[ comp_code, amt ]
 		);
-		return res.json({ invoice: results.rows[0] });
+		return res.status(201).json({ invoice: results.rows[0] });
 	} catch (error) {
 		return next(error);
 	}
